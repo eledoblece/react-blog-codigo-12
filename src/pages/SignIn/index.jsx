@@ -1,11 +1,18 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { isEmail, isPasswordValid } from "../../utils/strings";
+import { signIn, signUp } from "../../service/supabase";
 
 export default function SignIn() {
+    const navigate = useNavigate();
+
     const [inputs,setInputs] = useState({
         email: "",
         password: "",
     })
+
+    const [isValidEmail, setIsValidEmail] = useState(false);
+    const [isValidPassword, setIsValidPassword] = useState(false);
 
     const handleInputsChange = (event) => {
         const { value, name } = event.target;
@@ -16,13 +23,39 @@ export default function SignIn() {
         });
     }
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
 
-        //validamos el correo
-        console.log(isEmail(inputs.email));
-        console.log(isPasswordValid(inputs.password))
+        const { email, password } = inputs;
+
+        if(!isEmail(inputs.email) || !isPasswordValid(inputs.password)) {
+            setIsValidEmail(!isEmail(inputs.email));
+            setIsValidPassword(!isPasswordValid(inputs.password));
+            return
+        }
+    
+    setIsValidEmail(false);
+    setIsValidPassword(false);
+    
+    const { ok } = await signUp(inputs);
+
+    if (ok) {
+        // redirigir al home
+        navigate("/home");
+        return;
     }
+    
+    if (!ok) {
+        const user = await signIn(inputs);
+        
+        if (!user.ok) {
+            alert(user.error.message);
+            return;
+        }
+        // redirigir al home
+        navigate("/home");
+        }
+    };
 
     return (
         <>
@@ -40,10 +73,15 @@ export default function SignIn() {
                                 name="email"
                                 onChange={handleInputsChange}
                                 placeholder="Type your email"
-                                className="border border-red-500 outline-red-500 border-gray300 rounded-lg p-3 w-full bg-gray-50"
+                                className={'border ${isValidEmail ? "border-red-500" : "border-gray-300 " } rounded-lg p-3 w-full bg-gray-50'}
                             />
+                        {
+                            isValidEmail && (
+                            <span className="text-red-500">
+                                Ingresa un correo valido
+                            </span>
+                        )}
                         </div>
-                        <span className="text-red-500">Ingresa un correo valido</span>
                         <div className="mt-6">
                             <input 
                                 type="password"
@@ -51,8 +89,15 @@ export default function SignIn() {
                                 name="password"
                                 onChange={handleInputsChange}
                                 placeholder="Type your password"
-                                className="border border-gray300 rounded-lg p-3 w-full bg-gray-50"
+                                className={'border ${isPasswordValid ? "border-red-500" : "border-gray300"} rounded-lg p-3 w-full bg-gray-50"'}
                             />
+                        {
+                            isValidPassword && (
+                                <span className="text-red-500 mt-2 text-sm">
+                                Ingresa un password valido
+                                </span>
+                            )
+                        }
                         </div>
                         <div className="mt-6">
                             <button type="submit" className="btn btn-success w-full">Sign in</button>
