@@ -9,8 +9,8 @@ export const AuthProvider = (props) => {
     const [user, setUser] = useState(null);
 
     const fetchUser = async () => {
-        const user = await getCurrentUser();
-        setUser(user);
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
     }
     
     useEffect(() => {
@@ -21,7 +21,7 @@ export const AuthProvider = (props) => {
         <AuthContext.Provider 
             value= {{
                 user,
-                setUser
+                setUser,
             }}
         >
             {children}
